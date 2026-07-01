@@ -1,0 +1,64 @@
+---
+title: "The Authorization Gap"
+date: 2026-01-15
+summary: "Token issuance is not authorization. Most M365 tenants treat a valid token as proof of permitted access — that gap is where real risk lives."
+tags: ["authorization", "entra-id", "conditional-access", "non-human-identity"]
+topic: "authorization"
+---
+
+Every Conditional Access policy you've written answers the same question: *should this identity receive a token?*
+
+That is not the same question as: *should this identity be allowed to do what it's about to do?*
+
+The gap between those two questions is where most M365 tenant risk actually lives — and it's largely invisible in standard security reviews.
+
+## What Token Issuance Actually Guarantees
+
+When Entra ID issues an access token, it has evaluated the sign-in context against your CA policies. Device compliance, MFA, location, risk score — all checked at the moment of authentication. The token is minted. The identity proceeds.
+
+What the token does not carry is any enforcement of what the bearer can actually do with it. That determination belongs to the resource — Exchange, SharePoint, Teams, the Graph API endpoint — and the resource's authorization logic varies enormously across the M365 surface.
+
+A token issued to a compliant, MFA-satisfied, low-risk user grants access to the mailbox. It does not prevent that user from forwarding every email to an external address. It does not prevent an OAuth app — consented by that same user — from doing the same thing silently in the background.
+
+The CA policy did its job. The authorization layer didn't exist.
+
+## Where the Gap Manifests
+
+**Delegated permissions without scope enforcement.** When a user consents to an app, they delegate their own access rights. The app can exercise any permission the user holds, bounded only by the OAuth scopes requested — and many apps request broad scopes by default. `Mail.ReadWrite` is not `Mail.Read`. The difference rarely appears in a CA policy review.
+
+**Application permissions with no human in the loop.** App-only tokens bypass delegated flows entirely. A service principal with `Files.ReadWrite.All` granted by an admin has tenant-wide file access with no user context, no MFA requirement, no device signal. CA policies for workload identities exist but adoption is low and coverage is inconsistent.
+
+**Persistent access after context change.** Tokens have lifetimes. A user authenticated at 9am with a compliant device can lose device compliance at 11am — the token remains valid until expiry or explicit revocation. CAE (Continuous Access Evaluation) closes some of this window for supported workloads, but coverage is not uniform across the M365 service set.
+
+**Guest and cross-tenant identities.** External identities authenticate against their home tenant. Your CA policies evaluate them at the point of access, but the home tenant's security posture is outside your control. A guest token issued by a tenant with no MFA enforcement carries the same structural authority inside your tenant as one issued under strict controls.
+
+## What Entra's Current Tooling Covers
+
+Conditional Access handles the authentication gate well. With the right policy set — MFA, compliant device, sign-in risk, insider risk integration — you can significantly reduce the probability of a compromised credential producing a usable token.
+
+Entra ID Governance addresses some of the downstream authorization problem: access reviews, entitlement management, PIM for privileged roles. These are authorization controls operating at the identity layer rather than the session layer.
+
+Microsoft Defender for Cloud Apps (MDCA) adds behavioral analytics post-authentication — anomaly detection on what identities do with their tokens, not just whether they received one.
+
+## What It Doesn't Cover
+
+None of the above closes the authorization gap for non-human identities operating at scale.
+
+A service principal with broad Graph permissions, consented once by an admin, operating across hundreds of automation workflows, with no access review cadence and no behavioral baseline — that identity is largely invisible to the controls above. It has a token. It is authorized to act. No policy is evaluating whether any specific action it takes is within intended scope.
+
+This is not a configuration failure. It is an architectural gap. The M365 authorization model was built for human identities operating interactively. The non-human identity surface has expanded faster than the control framework.
+
+## The Operational Implication
+
+Security reviews that stop at CA policy coverage are reviewing half the problem.
+
+The questions that don't get asked often enough:
+
+- Which service principals in this tenant have application permissions to Mail, Files, or Calendar — and when were those permissions last reviewed?
+- Which OAuth apps have delegated permissions that exceed what the user actually needs to do their job?
+- Which tokens issued in the last 30 days came from identities that subsequently performed actions outside their normal behavioral envelope?
+- Where is CAE enforced, and where are we relying on token expiry as the primary revocation mechanism?
+
+The authorization graph for non-human identities acting on behalf of humans — or acting autonomously — is the next critical security frontier in M365 environments. Entra has building blocks. The architecture to connect them is still largely left to the tenant operator.
+
+That gap is worth naming clearly.
