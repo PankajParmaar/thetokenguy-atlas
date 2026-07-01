@@ -1,9 +1,9 @@
+// contentlayer.config.ts
 import { defineDocumentType, makeSource } from "contentlayer2/source-files";
 import rehypeHighlight from "rehype-highlight";
 import rehypeSlug from "rehype-slug";
 import remarkGfm from "remark-gfm";
-
-export const Post = defineDocumentType(() => ({
+var Post = defineDocumentType(() => ({
   name: "Post",
   filePathPattern: `journal/**/*.mdx`,
   contentType: "mdx",
@@ -15,26 +15,30 @@ export const Post = defineDocumentType(() => ({
     topic: {
       type: "enum",
       options: ["authentication", "authorization", "access-management", "federation", "governance", "signals-risk", "workload-identity"],
-      required: false,
-    },
+      required: false
+    }
   },
   computedFields: {
     slug: {
       type: "string",
-      resolve: (doc) => doc._raw.flattenedPath.replace("journal/", ""),
+      resolve: (doc) => doc._raw.flattenedPath.replace("journal/", "")
     },
     url: {
       type: "string",
-      resolve: (doc) => `/journal/${doc._raw.flattenedPath.replace("journal/", "")}`,
-    },
-  },
+      resolve: (doc) => `/journal/${doc._raw.flattenedPath.replace("journal/", "")}`
+    }
+  }
 }));
-
-export default makeSource({
+var contentlayer_config_default = makeSource({
   contentDirPath: "src/content",
   documentTypes: [Post],
   mdx: {
     remarkPlugins: [remarkGfm],
-    rehypePlugins: [rehypeHighlight, rehypeSlug],
-  },
+    rehypePlugins: [rehypeHighlight, rehypeSlug]
+  }
 });
+export {
+  Post,
+  contentlayer_config_default as default
+};
+//# sourceMappingURL=compiled-contentlayer-config-QIZZEIKM.mjs.map

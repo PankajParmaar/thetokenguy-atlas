@@ -11,10 +11,10 @@
   "dependencies": {
     "@next/mdx": "^16.2.10",
     "@types/d3": "^7.4.3",
-    "contentlayer2": "^0.5.8",
     "d3": "^7.9.0",
+    "gray-matter": "^4.0.3",
     "next": "16.2.10",
-    "next-contentlayer2": "^0.5.8",
+    "next-mdx-remote": "^6.0.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "rehype-highlight": "^7.0.2",
