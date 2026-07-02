@@ -33,16 +33,38 @@ export default function IdentityGraph() {
     })
 
     nodes.forEach((node) => {
-      svg.append("circle")
+      const g = svg.append("g").attr("cursor", "pointer")
+
+      g.append("circle")
         .attr("cx", node.x).attr("cy", node.y)
         .attr("r", node.center ? 28 : 18)
-        .attr("fill", "#1D9E75").attr("opacity", node.center ? 1 : 0.75)
+        .attr("fill", "#1D9E75")
+        .attr("opacity", node.center ? 1 : 0.75)
+        .attr("class", `node-${node.id.replace(/\s/g, "-")}`)
 
-      svg.append("text")
+      g.append("text")
         .attr("x", node.x).attr("y", node.y + (node.center ? 44 : 34))
         .attr("text-anchor", "middle")
         .attr("fill", "#1D9E75").attr("font-size", "12px")
         .text(node.id)
+
+      g.on("mouseenter", function () {
+        d3.select(this).select("circle")
+          .transition().duration(150)
+          .attr("r", node.center ? 34 : 24)
+          .attr("opacity", 1)
+      })
+      .on("mouseleave", function () {
+        d3.select(this).select("circle")
+          .transition().duration(150)
+          .attr("r", node.center ? 28 : 18)
+          .attr("opacity", node.center ? 1 : 0.75)
+      })
+      .on("click", function () {
+        if (!node.center) {
+          window.location.href = `/topics/${node.id.toLowerCase().replace(/\s/g, "-")}`
+        }
+      })
     })
   }, [])
 
