@@ -3,196 +3,308 @@
 import { useEffect, useRef } from "react"
 import * as d3 from "d3"
 
-const nodes = [
-  { id: "Identity", x: 400, y: 300, center: true },
-  { id: "Users", x: 200, y: 150 },
-  { id: "Applications", x: 400, y: 100 },
-  { id: "Governance", x: 600, y: 150 },
-  { id: "Directory", x: 650, y: 300 },
-  { id: "Privileged Access", x: 600, y: 450 },
-  { id: "Resources", x: 400, y: 500 },
-  { id: "Signals", x: 200, y: 450 },
+interface IdentityGraphProps {
+  onNodeHover?: (slug: string | null) => void
+  onNodeClick?: (slug: string | null) => void
+}
+
+interface NodeDatum {
+  id: string
+  x: number
+  y: number
+  center?: boolean
+}
+
+const CX = 300
+const CY = 300
+const RADIUS = 220
+
+const outerNodeIds = [
+  "Users",
+  "Applications",
+  "Governance",
+  "Directory & Graph",
+  "Privileged Access",
+  "Resources",
+  "Signals",
 ]
 
-const links = nodes.slice(1).map((n) => ({
-  source: "Identity",
-  target: n.id,
-}))
+const nodes: NodeDatum[] = [
+  { id: "Identity", x: CX, y: CY, center: true },
+  ...outerNodeIds.map((id, index) => {
+    const angle = (2 * Math.PI / 7) * index - Math.PI / 2
+    return {
+      id,
+      x: Math.round(CX + RADIUS * Math.cos(angle)),
+      y: Math.round(CY + RADIUS * Math.sin(angle)),
+    }
+  }),
+]
 
 const edgeLabels: Record<string, string> = {
   Users: "Authentication",
   Applications: "Authorization",
-  Directory: "Federation",
+  "Directory & Graph": "Federation",
 }
 
-export default function IdentityGraph() {
+const nodeToSlug: Record<string, string> = {
+  Users: "users",
+  Applications: "applications",
+  Governance: "governance",
+  "Directory & Graph": "directory",
+  "Privileged Access": "privileged-access",
+  Resources: "resources",
+  Signals: "signals",
+}
+
+function getCurvedPath(source: NodeDatum, target: NodeDatum): string {
+  const mx = (source.x + target.x) / 2
+  const my = (source.y + target.y) / 2
+  const dx = target.x - source.x
+  const dy = target.y - source.y
+  // Perpendicular offset — always curves clockwise for consistent feel
+  const offset = 40
+  const cpx = mx - dy * offset / Math.hypot(dx, dy)
+  const cpy = my + dx * offset / Math.hypot(dx, dy)
+  return `M ${source.x} ${source.y} Q ${cpx} ${cpy} ${target.x} ${target.y}`
+}
+
+export default function IdentityGraph({ onNodeHover, onNodeClick }: IdentityGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
     const svg = d3.select(svgRef.current)
     svg.selectAll("*").remove()
 
-    links.forEach((link) => {
-      const source = nodes.find((n) => n.id === link.source)!
-      const target = nodes.find((n) => n.id === link.target)!
+    const identity = nodes.find((n) => n.center)!
+
+    // Draw edges
+    nodes.slice(1).forEach((target) => {
+      const safeClass = target.id.replace(/[\s&]/g, "-")
+      const pathD = getCurvedPath(identity, target)
 
       svg
-        .append("line")
-        .attr("x1", source.x)
-        .attr("y1", source.y)
-        .attr("x2", target.x)
-        .attr("y2", target.y)
+        .append("path")
+        .attr("d", pathD)
+        .attr("fill", "none")
         .attr("stroke", "#1D9E75")
         .attr("stroke-width", 1.5)
         .attr("opacity", 0.35)
-        .attr("class", `edge edge-${target.id.replace(/\s/g, "-")}`)
+        .attr("class", `edge edge-${safeClass}`)
 
       if (edgeLabels[target.id]) {
-        const midX = (source.x + target.x) / 2
-        const midY = (source.y + target.y) / 2
-
+        const mx = (identity.x + target.x) / 2
+        const my = (identity.y + target.y) / 2
         svg
           .append("text")
-          .attr("x", midX)
-          .attr("y", midY - 10)
+          .attr("x", mx)
+          .attr("y", my - 12)
           .attr("text-anchor", "middle")
           .attr("font-size", "11px")
           .attr("fill", "#94A3B8")
-          .attr("class", `edge-label edge-label-${target.id.replace(/\s/g, "-")}`)
+          .attr("class", `edge-label edge-label-${safeClass}`)
           .text(edgeLabels[target.id])
       }
     })
 
+    // Draw nodes
     nodes.forEach((node) => {
-      const nodeClass = node.id.replace(/\s/g, "-")
-
+      const safeClass = node.id.replace(/[\s&]/g, "-")
+      let packetInterval: ReturnType<typeof setInterval> | null = null
       const g = svg.append("g").attr("cursor", "pointer")
 
-      g.append("circle")
-        .attr("cx", node.x)
-        .attr("cy", node.y)
-        .attr("r", node.center ? 28 : 18)
-        .attr("fill", "#1D9E75")
-        .attr("opacity", node.center ? 1 : 0.75)
-        .attr("class", `node node-${nodeClass}`)
+      if (node.center) {
+        g.append("circle")
+          .attr("cx", node.x)
+          .attr("cy", node.y)
+          .attr("r", 55)
+          .attr("fill", "#1D9E7520")
+          .attr("class", `node-glow node-glow-${safeClass}`)
 
-      g.append("text")
-        .attr("x", node.x)
-        .attr("y", node.y + (node.center ? 44 : 34))
-        .attr("text-anchor", "middle")
-        .attr("fill", "#1D9E75")
-        .attr("font-size", "12px")
-        .attr("class", `node-label node-label-${nodeClass}`)
-        .text(node.id)
+        g.append("circle")
+          .attr("cx", node.x)
+          .attr("cy", node.y)
+          .attr("r", 45)
+          .attr("fill", "#1D9E75")
+          .attr("class", `node node-${safeClass}`)
 
-      g.on("mouseenter", function () {
-        // Fade everything
-        svg.selectAll(".node")
-          .transition()
-          .duration(150)
-          .attr("opacity", 0.2)
+        g.append("text")
+          .attr("x", node.x)
+          .attr("y", node.y - 4)
+          .attr("text-anchor", "middle")
+          .attr("fill", "white")
+          .attr("font-size", "14px")
+          .attr("font-weight", "bold")
+          .attr("class", `node-label node-label-${safeClass}`)
+          .text("Identity")
 
+        g.append("text")
+          .attr("x", node.x)
+          .attr("y", node.y + 10)
+          .attr("text-anchor", "middle")
+          .attr("fill", "white")
+          .attr("font-size", "9px")
+          .attr("class", `node-label node-label-${safeClass}`)
+          .text("control plane")
+      } else {
+        g.append("circle")
+          .attr("cx", node.x)
+          .attr("cy", node.y)
+          .attr("r", 18)
+          .attr("fill", "#1D9E75")
+          .attr("opacity", 1)
+          .attr("class", `node node-${safeClass}`)
+
+        g.append("text")
+          .attr("x", node.x)
+          .attr("y", node.y + 34)
+          .attr("text-anchor", "middle")
+          .attr("fill", "#1D9E75")
+          .attr("font-size", "12px")
+          .attr("class", `node-label node-label-${safeClass}`)
+          .text(node.id)
+      }
+
+      g.on("mouseenter", () => {
+        svg.selectAll<SVGCircleElement, unknown>(".node")
+          .transition().duration(150).attr("opacity", 0.45)
         svg.selectAll(".node-label")
-          .transition()
-          .duration(150)
-          .attr("opacity", 0.2)
-
-        svg.selectAll(".edge")
-          .transition()
-          .duration(150)
-          .attr("opacity", 0.1)
-
+          .transition().duration(150).attr("opacity", 0.45)
+        svg.selectAll("path.edge")
+          .transition().duration(150).attr("opacity", 0.1)
         svg.selectAll(".edge-label")
-          .transition()
-          .duration(150)
-          .attr("opacity", 0.15)
+          .transition().duration(150).attr("opacity", 0.15)
 
-        // Identity always stays visible
         svg.select(".node-Identity")
-          .transition()
-          .duration(150)
-          .attr("opacity", 1)
-
+          .transition().duration(150).attr("opacity", 1)
         svg.select(".node-label-Identity")
-          .transition()
-          .duration(150)
-          .attr("opacity", 1)
+          .transition().duration(150).attr("opacity", 1)
 
-        // Hovered node
-        d3.select(this)
-          .select("circle")
-          .transition()
-          .duration(150)
-          .attr("opacity", 1)
-          .attr("r", node.center ? 34 : 24)
+        const nodeCircle = node.center
+          ? g.select<SVGCircleElement>(".node-Identity")
+          : g.select<SVGCircleElement>("circle")
 
-        d3.select(this)
-          .select("text")
-          .transition()
-          .duration(150)
+        nodeCircle
+          .transition().duration(150)
           .attr("opacity", 1)
+          .attr("r", node.center ? 45 : 24)
+        g.select("text")
+          .transition().duration(150).attr("opacity", 1)
 
         if (!node.center) {
-          svg.select(`.edge-${nodeClass}`)
-            .transition()
-            .duration(150)
+          svg.select(`path.edge-${safeClass}`)
+            .transition().duration(150)
             .attr("opacity", 1)
             .attr("stroke-width", 2.5)
-
-          svg.select(`.edge-label-${nodeClass}`)
-            .transition()
-            .duration(150)
+          svg.select(`.edge-label-${safeClass}`)
+            .transition().duration(150)
             .attr("opacity", 1)
             .attr("fill", "#1D9E75")
+
+          packetInterval = setInterval(() => {
+            const pathEl = svg.select(`path.edge-${safeClass}`).node() as SVGPathElement
+            const totalLength = pathEl.getTotalLength()
+            const startPoint = pathEl.getPointAtLength(totalLength)
+
+            svg
+              .append("circle")
+              .attr("class", "packet")
+              .attr("cx", startPoint.x)
+              .attr("cy", startPoint.y)
+              .attr("r", 4)
+              .attr("fill", "#1D9E75")
+              .attr("opacity", 0.8)
+              .transition()
+              .duration(1200)
+              .ease(d3.easeLinear)
+              .attrTween("cx", () => (t) => {
+                const point = pathEl.getPointAtLength(totalLength * (1 - t))
+                return String(point.x)
+              })
+              .attrTween("cy", () => (t) => {
+                const point = pathEl.getPointAtLength(totalLength * (1 - t))
+                return String(point.y)
+              })
+              .attr("opacity", 0)
+              .on("end", function () {
+                d3.select(this).remove()
+              })
+          }, 250)
+
+          onNodeHover?.(nodeToSlug[node.id])
         }
       })
 
-      .on("mouseleave", function () {
-
-        svg.selectAll(".node")
-          .transition()
-          .duration(150)
-          .attr("opacity", function () {
-            return d3.select(this).classed("node-Identity") ? 1 : 0.75
-          })
-
+      g.on("mouseleave", () => {
+        nodes.forEach((n) => {
+          const nc = n.id.replace(/[\s&]/g, "-")
+          svg.select(`.node-${nc}`)
+            .transition().duration(150)
+            .attr("opacity", 1)
+        })
         svg.selectAll(".node-label")
-          .transition()
-          .duration(150)
-          .attr("opacity", 1)
-
-        svg.selectAll(".edge")
-          .transition()
-          .duration(150)
+          .transition().duration(150).attr("opacity", 1)
+        svg.selectAll("path.edge")
+          .transition().duration(150)
           .attr("opacity", 0.35)
           .attr("stroke-width", 1.5)
-
         svg.selectAll(".edge-label")
-          .transition()
-          .duration(150)
+          .transition().duration(150)
           .attr("opacity", 1)
           .attr("fill", "#94A3B8")
+        const nodeCircle = node.center
+          ? g.select<SVGCircleElement>(".node-Identity")
+          : g.select<SVGCircleElement>("circle")
 
-        d3.select(this)
-          .select("circle")
-          .transition()
-          .duration(150)
-          .attr("r", node.center ? 28 : 18)
-      })
+        nodeCircle
+          .transition().duration(150)
+          .attr("r", node.center ? 45 : 18)
 
-      .on("click", function () {
-        switch (node.id) {
-          case "Applications":
-            window.location.href = "/topics/applications"
-            break
-
-          default:
-            // Remaining topic pages will be added later.
-            break
+        if (!node.center) {
+          if (packetInterval) {
+            clearInterval(packetInterval)
+            packetInterval = null
+          }
+          svg.selectAll(".packet").remove()
+          onNodeHover?.(null)
         }
       })
-    })
-  }, [])
 
-  return <svg ref={svgRef} width="800" height="600" />
+      if (!node.center) {
+        g.on("click", () => {
+          onNodeClick?.(nodeToSlug[node.id])
+        })
+      }
+    })
+
+    // Pulse ring
+    const pulse = svg
+      .append("circle")
+      .attr("cx", identity.x)
+      .attr("cy", identity.y)
+      .attr("r", 28)
+      .attr("fill", "none")
+      .attr("stroke", "#1D9E75")
+      .attr("stroke-width", 2)
+      .attr("opacity", 0.6)
+
+    function repeat() {
+      pulse
+        .attr("r", 28).attr("opacity", 0.6)
+        .transition().duration(1500).ease(d3.easeLinear)
+        .attr("r", 52).attr("opacity", 0)
+        .on("end", repeat)
+    }
+    repeat()
+
+  }, [onNodeHover, onNodeClick])
+
+  return (
+    <svg
+      ref={svgRef}
+      width="600"
+      height="600"
+      className="overflow-visible"
+    />
+  )
 }

@@ -25,10 +25,10 @@ export interface Topic {
     },
     {
       slug: "directory",
-      title: "Directory",
+      title: "Directory & Graph",
       description:
         "Directories synchronize and federate identities across systems.",
-      node: "Directory",
+      node: "Directory & Graph", // changed from directory to directory & graph
       icon: "🌐",
     },
     {
