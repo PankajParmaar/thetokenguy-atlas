@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { forwardRef, useEffect, useRef } from "react"
 import * as d3 from "d3"
 import * as LucideIcons from "lucide-react"
 import { renderToStaticMarkup } from "react-dom/server"
@@ -20,9 +20,14 @@ export interface NodeDatum {
   center?: boolean
 }
 
-const CX = 420
-const CY = 210
-const RADIUS = 240
+export const GRAPH_VIEWBOX_WIDTH = 900
+export const GRAPH_VIEWBOX_HEIGHT = 760
+
+const CX = 450
+const CY = 380
+const RADIUS = 190
+const H_OUTER = RADIUS + 30
+const V_OUTER = RADIUS + 60
 
 const outerNodeIds = [
   { id: "Users", icon: "Users" },
@@ -68,19 +73,19 @@ const nodes: NodeDatum[] = [
   ...outerBasePositions.map(({ id, x, y }) => {
     switch (id) {
       case "Applications":
-        return { id, x: CX + 270, y: applicationsY - 20 }
+        return { id, x: CX + H_OUTER, y: applicationsY - 20 }
       case "Signals":
-        return { id, x: CX - 270, y: signalsY - 20 }
+        return { id, x: CX - H_OUTER, y: signalsY - 20 }
       case "Privileged Access":
-        return { id, x: CX - 270, y: privilegedAccessY + 30 }
+        return { id, x: CX - H_OUTER, y: privilegedAccessY + 30 }
       case "Directory & Graph":
-        return { id, x: CX + 270, y: directoryY + 30 }
+        return { id, x: CX + H_OUTER, y: directoryY + 30 }
       case "Resources":
-        return { id, x: CX - 270, y: CY }
+        return { id, x: CX - H_OUTER, y: CY }
       case "Governance":
-        return { id, x: CX + 270, y: CY }
+        return { id, x: CX + H_OUTER, y: CY }
       case "Zero Trust":
-        return { id, x: CX, y: CY + 300 }
+        return { id, x: CX, y: CY + V_OUTER }
       case "Users":
         return { id, x, y: y - 60 }
       default:
@@ -163,7 +168,7 @@ const fiberControlPoints: Record<string, ControlPointOffset> = {
 }
 
 function getFiberPaths(source: NodeDatum, target: NodeDatum, nodeId: string): string[] {
-  const strandCount = 12
+  const strandCount: number = 12
 
   // Applications' node was shifted +30px right (see nodes array); keep the S-curve's
   // control points anchored to its original position so only the strand endpoints
@@ -215,7 +220,7 @@ function getFiberPaths(source: NodeDatum, target: NodeDatum, nodeId: string): st
 }
 
 function getIconSvgString(iconName: string, size = 20): string {
-  const IconComponent = (LucideIcons as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[iconName]
+  const IconComponent = (LucideIcons as unknown as Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>>)[iconName]
   if (!IconComponent) return ""
   return renderToStaticMarkup(
     <IconComponent
@@ -228,13 +233,13 @@ function getIconSvgString(iconName: string, size = 20): string {
   )
 }
 
-export default function IdentityGraph({
+const IdentityGraph = forwardRef<SVGSVGElement, IdentityGraphProps>(function IdentityGraph({
   onNodeHover,
   onNodeClick,
   onBackgroundClick,
   pinnedNode,
   activeNodeId,
-}: IdentityGraphProps) {
+}, forwardedRef) {
   const svgRef = useRef<SVGSVGElement>(null)
   const pinnedNodeRef = useRef<NodeDatum | null>(null)
   const activeIntervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map())
@@ -257,7 +262,7 @@ export default function IdentityGraph({
         .attr("filter", n.center ? "url(#centerGlow)" : "url(#nodeDropShadow)")
     })
     svg.selectAll(".node-label-text").transition().duration(150).attr("opacity", 1)
-    svg.selectAll("path.edge").transition().duration(150).attr("opacity", 0.15).attr("stroke-width", 0.8)
+    svg.selectAll("path.edge").transition().duration(150).attr("opacity", 0.18).attr("stroke-width", 0.6)
     svg.selectAll(".edge-arrow").transition().duration(150).attr("opacity", 0.15)
   }, [activeNodeId])
 
@@ -265,8 +270,8 @@ export default function IdentityGraph({
     const svg = d3.select(svgRef.current)
     svg.selectAll("*").remove()
 
-    const W = 900
-    const H = 760
+    const W = GRAPH_VIEWBOX_WIDTH
+    const H = GRAPH_VIEWBOX_HEIGHT
 
     // Defs
     const defs = svg.append("defs")
@@ -280,7 +285,7 @@ export default function IdentityGraph({
 
     // Node drop shadow
     const shadowFilter = defs.append("filter").attr("id", "nodeDropShadow").attr("x", "-30%").attr("y", "-30%").attr("width", "160%").attr("height", "160%")
-    shadowFilter.append("feDropShadow").attr("dx", "0").attr("dy", "2").attr("stdDeviation", "4").attr("flood-color", "#1D9E75").attr("flood-opacity", "0.15")
+    shadowFilter.append("feDropShadow").attr("dx", "0").attr("dy", "2").attr("stdDeviation", "4").attr("flood-color", "#1D9E75").attr("flood-opacity", "0.25")
 
     // Arrow marker
     defs.append("marker")
@@ -303,7 +308,7 @@ export default function IdentityGraph({
         .attr("cx", Math.random() * W)
         .attr("cy", Math.random() * H)
         .attr("r", Math.random() * 2.5 + 0.5)
-        .attr("fill", "#1D9E75")
+        .attr("fill", "#d1d5db")
         .attr("opacity", Math.random() * 0.2 + 0.05)
         .attr("class", "bg-particle")
     }
@@ -324,7 +329,7 @@ export default function IdentityGraph({
           .attr("fill", "none")
           .attr("stroke", "#1D9E75")
           .attr("stroke-width", 0.6)
-          .attr("opacity", 0.12)
+          .attr("opacity", 0.18)
           .attr("class", `edge edge-${safeClass} edge-${safeClass}-${i}`)
       })
 
@@ -336,7 +341,7 @@ export default function IdentityGraph({
         .attr("fill", "none")
         .attr("stroke", "#1D9E75")
         .attr("stroke-width", 1)
-        .attr("opacity", 0.08)
+        .attr("opacity", 0.15)
         .attr("class", `edge edge-${safeClass} edge-${safeClass}-spine`)
     })
 
@@ -413,7 +418,7 @@ export default function IdentityGraph({
           .attr("cx", node.x).attr("cy", node.y)
           .attr("r", 28)
           .attr("fill", "white")
-          .attr("stroke", "#1D9E75")
+          .attr("stroke", "#e5e7eb")
           .attr("stroke-width", 1)
           .attr("opacity", 0.9)
           .attr("filter", "url(#nodeDropShadow)")
@@ -440,7 +445,7 @@ export default function IdentityGraph({
           .attr("x", labelPos.x)
           .attr("y", labelPos.y)
           .attr("text-anchor", labelPos.anchor)
-          .attr("fill", "#1a2332")
+          .attr("fill", "#0a0a0a")
           .attr("font-size", "13px")
           .attr("font-weight", "600")
           .attr("font-family", "system-ui, sans-serif")
@@ -542,8 +547,8 @@ export default function IdentityGraph({
         svg.selectAll(".node-circle").transition().duration(150).attr("opacity", 1)
         svg.selectAll(".node-label-text").transition().duration(150).attr("opacity", 1)
         svg.selectAll("path.edge").transition().duration(150)
-          .attr("opacity", 0.1)
-          .attr("stroke-width", 0.5)
+          .attr("opacity", 0.18)
+          .attr("stroke-width", 0.6)
         svg.select(`.node-circle-${safeClass}`)
           .transition().duration(150)
           .attr("r", node.center ? 80 : 28)
@@ -586,11 +591,17 @@ export default function IdentityGraph({
 
   return (
     <svg
-      ref={svgRef}
-      width="900"
-      height="760"
-      className="overflow-visible"
+      ref={(el) => {
+        svgRef.current = el
+        if (typeof forwardedRef === "function") forwardedRef(el)
+        else if (forwardedRef) forwardedRef.current = el
+      }}
+      viewBox={`0 0 ${GRAPH_VIEWBOX_WIDTH} ${GRAPH_VIEWBOX_HEIGHT}`}
+      preserveAspectRatio="xMidYMid meet"
+      className="w-full h-full max-w-full max-h-full overflow-visible"
       onClick={onBackgroundClick}
     />
   )
-}
+})
+
+export default IdentityGraph

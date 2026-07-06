@@ -3,7 +3,17 @@
     "allow": [
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npm run *)",
+      "Skill(run)",
+      "Bash(timeout 40 bash -c 'until curl -sf http://localhost:3000 >/dev/null; do sleep 1; done')",
+      "Bash(chromium-cli --help)",
+      "Bash(node -e \"try{require.resolve\\('playwright'\\);console.log\\('has playwright'\\)}catch\\(e\\){console.log\\('no playwright'\\)}\")",
+      "Bash(timeout 90 npx --yes playwright install chromium --with-deps)",
+      "Bash(node \"C:/Users/pankaj/AppData/Local/Temp/claude/C--Users-pankaj-thetokenguy-atlas/9cbed7bb-6b7f-4c9e-91bd-7f37bfa969fc/scratchpad/verify-home.mjs\")",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(node verify-home.mjs)"
     ]
   }
 }

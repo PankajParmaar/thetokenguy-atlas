@@ -54,8 +54,9 @@ export default function NodeContextPanel({
 
           <div className="flex items-center gap-3">
             {(() => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const IconComponent = topic.lucideIcon
-                ? (LucideIcons as Record<string, React.ComponentType<{ size?: number; stroke?: string; strokeWidth?: number }>>)[topic.lucideIcon]
+                ? (LucideIcons as Record<string, any>)[topic.lucideIcon]
                 : null
               return IconComponent
                 ? <IconComponent size={28} stroke="#1D9E75" strokeWidth={1.5} />

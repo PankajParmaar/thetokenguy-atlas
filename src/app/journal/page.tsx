@@ -1,21 +1,34 @@
-import { getAllPosts } from "@/lib/posts"
-import Link from "next/link"
+const UPCOMING_POSTS = [
+  "The Authorization Gap",
+  "Programmatic Tenant Diagnostics: Auditing CA Policy Drift",
+  "Programmatic Tenant Diagnostics: Automating Entra ID Security Assessments",
+  "Mitigating App Registration Secret Sprawl",
+  "CISO Strategic Advisory: Hardening Identity Perimeters Against Lateral Movement",
+]
 
 export default function JournalPage() {
-  const posts = getAllPosts()
-
   return (
-    <main className="max-w-2xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold mb-8">Journal</h1>
-      {posts.map((post) => (
-        <div key={post.slug} className="mb-8">
-          <Link href={`/journal/${post.slug}`} className="text-xl font-semibold hover:underline">
-            {post.title}
-          </Link>
-          <p className="text-sm text-gray-500 mt-1">{post.date}</p>
-          <p className="mt-2 text-gray-700">{post.summary}</p>
-        </div>
-      ))}
+    <main className="min-h-screen bg-[#0a0a0a] px-6 py-16">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-4xl font-bold text-white">Journal</h1>
+        <p className="mt-3 text-base text-gray-400">
+          In-depth practitioner writing on identity security, Entra ID, and Zero Trust.
+        </p>
+
+        <ul className="mt-10 space-y-4">
+          {UPCOMING_POSTS.map((title) => (
+            <li
+              key={title}
+              className="flex items-center justify-between gap-4 border border-white/10 rounded-lg px-5 py-4"
+            >
+              <span className="text-white">{title}</span>
+              <span className="shrink-0 rounded-full bg-[#1D9E75]/10 px-3 py-1 text-xs font-medium text-[#1D9E75]">
+                Coming Soon
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </main>
   )
 }
