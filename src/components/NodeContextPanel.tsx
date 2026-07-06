@@ -1,12 +1,14 @@
 "use client"
 
 import Link from "next/link"
+import * as LucideIcons from "lucide-react"
 
 import { topics } from "@/lib/topics"
+import { NodeDatum, nodeToSlug } from "@/components/graph/IdentityGraph"
 
 interface NodeContextPanelProps {
-  hoveredNode: string | null
-  pinnedNode: string | null
+  node: NodeDatum | null
+  isPinned: boolean
   onUnpin: () => void
 }
 
@@ -18,23 +20,22 @@ const placeholderCounts = {
 }
 
 export default function NodeContextPanel({
-  hoveredNode,
-  pinnedNode,
+  node,
+  isPinned,
   onUnpin,
 }: NodeContextPanelProps) {
-  const activeSlug = pinnedNode ?? hoveredNode
-  const topic = topics.find((t) => t.slug === activeSlug)
-  const isPinned = pinnedNode !== null
+  const topic = topics.find((t) => t.slug === (node ? nodeToSlug[node.id] : null))
 
   return (
-    <aside
+    <div
+      style={{ pointerEvents: isPinned ? 'auto' : 'none' }}
       className={`
         relative w-80 rounded-xl border border-teal-500 bg-white shadow-md
         transition-all duration-200
         ${
           topic
             ? "translate-x-0 opacity-100"
-            : "pointer-events-none translate-x-4 opacity-0"
+            : "translate-x-4 opacity-0"
         }
       `}
     >
@@ -52,7 +53,14 @@ export default function NodeContextPanel({
           )}
 
           <div className="flex items-center gap-3">
-            <span className="text-3xl">{topic.icon}</span>
+            {(() => {
+              const IconComponent = topic.lucideIcon
+                ? (LucideIcons as Record<string, React.ComponentType<{ size?: number; stroke?: string; strokeWidth?: number }>>)[topic.lucideIcon]
+                : null
+              return IconComponent
+                ? <IconComponent size={28} stroke="#1D9E75" strokeWidth={1.5} />
+                : <span className="text-3xl">{topic.icon}</span>
+            })()}
             <h2 className="text-xl font-bold text-slate-900">{topic.title}</h2>
           </div>
 
@@ -94,6 +102,6 @@ export default function NodeContextPanel({
           </div>
         </div>
       )}
-    </aside>
+    </div>
   )
 }
