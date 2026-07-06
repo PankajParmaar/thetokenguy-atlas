@@ -1,6 +1,6 @@
 ---
 tags: [master, thetokenguy, identity-atlas]
-last-updated: 02-07-2026
+last-updated: 07-07-2026
 ---
 
 # The Token Guy — Master Context File
@@ -167,11 +167,13 @@ Token economy: Claude.ai sessions are planning-only. All token spend on code gen
 - Treat **CURRENT.md** as the current implementation state.
     
 - Record all final architectural and implementation decisions in **MASTER.md**.
+
+- **Token tracking (mandatory):** At the start of every Claude Code session, note the token count displayed in the session header. At the end of every session (before closing or running /compact), note the closing token count. Record both in CURRENT.md under a `## Token Usage Log` section in the format: `[Date] Session start: X tokens → Session end: Y tokens (Delta: Z)`. Purpose: build a historical record of usage patterns to optimize prompt sizing and session scope over time.
     
 
-### Claude → Antigravity Handoff Rules
+### Claude → Antigravity / Claude Code Handoff Rules
 
-Before generating any implementation prompt for Antigravity:
+Before generating any implementation prompt:
 
 1. Break every feature into the smallest independently implementable task.
     
@@ -179,7 +181,7 @@ Before generating any implementation prompt for Antigravity:
     
 3. Reference only the exact files required for the task.
     
-4. Never instruct Antigravity to scan, understand, or index the entire repository.
+4. Never instruct the implementation tool to scan, understand, or index the entire repository.
     
 5. Provide only the minimum context needed for that specific implementation.
     
@@ -206,11 +208,13 @@ Before generating any implementation prompt for Antigravity:
 11. Optimize every implementation prompt to minimize context size and token consumption.
     
 12. Assume previous verified implementations are correct unless a regression is reported.
-    
+
+13. **Never run Playwright, Puppeteer, or any browser automation for verification.** Build verification only: `npm run build`. Visual verification is done by the human in the browser. This rule is absolute — end every prompt with: "Do not run any browser, Playwright, Puppeteer, or visual verification scripts. Do not install any packages not already in package.json. Build verification only: npm run build. I will verify visually in browser."
+
 
 ### Guiding Principle
 
-Claude plans. Antigravity implements. Keep every implementation prompt narrowly scoped, deterministic, and as token-efficient as possible.
+Claude plans. Claude Code implements. Keep every implementation prompt narrowly scoped, deterministic, and as token-efficient as possible. No autonomous visual verification — ever.
 
 ---
 
