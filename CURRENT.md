@@ -45,3 +45,9 @@ last-updated: 07-07-2026
 5. Build /playbooks shell
 6. Build /lab shell
 7. Then: flyout position fix (Users + Zero Trust nodes only) as isolated task
+
+## Token Usage Log
+
+| Date       | Event         | Session % | Week % | Cumulative Cost | Notes                          |
+|------------|---------------|-----------|--------|-----------------|--------------------------------|
+| 07-07-2026 | Session start | 29%       | 8%     | $29.75          | 65% of prior usage at >150k ctx |

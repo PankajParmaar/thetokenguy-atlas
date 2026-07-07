@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useRef } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import Link from "next/link"
 import {
   Clock,
@@ -27,7 +27,7 @@ import IdentityGraph, {
 } from "@/components/graph/IdentityGraph"
 import NodeContextPanel from "@/components/NodeContextPanel"
 
-const PANEL_WIDTH = 320
+const PANEL_WIDTH = 380
 const PANEL_HEIGHT = 400
 const NODE_OFFSET = 24
 const FALLBACK_VIEWPORT_WIDTH = 1440
@@ -73,10 +73,21 @@ function getPanelPosition(
   let top: number
   if (node.id === "Users") {
     // Users sits at the top edge of the graph — always flip below.
-    top = nodeScreenY + 80
+    top = nodeScreenY - 102
   } else if (node.id === "Zero Trust") {
-    // Zero Trust sits at the bottom edge of the graph — always flip above.
-    top = nodeScreenY - 300
+    // Zero Trust sits at the bottom — render below the node, shifted right to clear the graph.
+    top = nodeScreenY + 96
+  } else if (
+    node.id === "Signals" ||
+    node.id === "Privileged Access" ||
+    node.id === "Applications" ||
+    node.id === "Directory & Graph"
+  ) {
+    // These nodes cluster near vertical mid-screen — the open-above/open-below
+    // thresholds below invert the upper/lower pairs relative to each other
+    // because PANEL_HEIGHT is large relative to their spacing. Center on the
+    // node instead, same as Resources/Governance.
+    top = nodeScreenY - PANEL_HEIGHT / 2
   } else if (nodeScreenY < viewportHeight * 0.4) {
     top = nodeScreenY + NODE_OFFSET
   } else if (nodeScreenY > viewportHeight * 0.6) {
@@ -86,16 +97,78 @@ function getPanelPosition(
   }
 
   let left: number
-  if (nodeScreenX < viewportWidth * 0.5) {
+  if (node.id === "Zero Trust") {
+    left = nodeScreenX + 40
+  } else if (
+    node.id === "Signals" ||
+    node.id === "Resources" ||
+    node.id === "Privileged Access"
+  ) {
+    // Left-side nodes — open the panel to the left, away from the graph.
+    left = nodeScreenX - PANEL_WIDTH - NODE_OFFSET + 96
+  } else if (
+    node.id === "Applications" ||
+    node.id === "Governance" ||
+    node.id === "Directory & Graph"
+  ) {
+    // Right-side nodes — open the panel to the right, away from the graph,
+    // with extra breathing room between the node and the panel edge.
+    left = nodeScreenX + NODE_OFFSET + 36
+  } else if (nodeScreenX < viewportWidth * 0.5) {
     left = nodeScreenX + NODE_OFFSET
   } else {
     left = nodeScreenX - PANEL_WIDTH - NODE_OFFSET
+  }
+
+  if (node.id === "Users") {
+    left = left + 38
+  }
+
+  if (
+    node.id === "Signals" ||
+    node.id === "Resources" ||
+    node.id === "Privileged Access" ||
+    node.id === "Applications" ||
+    node.id === "Governance"
+  ) {
+    top = top + 96
+  }
+
+  if (node.id === "Privileged Access") {
+    top = top + 96
   }
 
   top = Math.max(top, 80)
   left = Math.max(left, 16)
   left = Math.min(left, viewportWidth - PANEL_WIDTH - 16)
   top = Math.min(top, viewportHeight - PANEL_HEIGHT - 16)
+
+  if (node.id === "Privileged Access") {
+    // Resources sits vertically centered on the left side and its top is
+    // never higher on screen than this ceiling (same clamp as above). Force
+    // Privileged Access to render at least 150px below that ceiling so the
+    // two flyouts can never land on the same vertical position, since
+    // Privileged Access sits lower on the graph than Resources.
+    const resourcesMaxTop = viewportHeight - PANEL_HEIGHT - 16
+    top = Math.max(top, resourcesMaxTop + 150)
+  }
+
+  if (node.id === "Directory & Graph") {
+    // Governance sits vertically centered on the right side and its top is
+    // never higher on screen than this ceiling (same clamp as above). Force
+    // Directory & Graph to render at least 150px below that ceiling so the
+    // two flyouts can never land on the same vertical position, since
+    // Directory & Graph sits lower on the graph than Governance — the
+    // mirror image of Privileged Access/Resources on the left side.
+    const governanceMaxTop = viewportHeight - PANEL_HEIGHT - 16
+    top = Math.max(top, governanceMaxTop + 150)
+  }
+
+  if (node.id === "Zero Trust") {
+    // The clamp above caps top before the raw offset can push the panel any
+    // lower, so shift down after clamping to actually move it on screen.
+    top = top + 286
+  }
 
   return { left, top }
 }
@@ -154,6 +227,11 @@ export default function HomePage() {
 
   const handleBackgroundClick = useCallback(() => {
     handleClose()
+  }, [handleClose])
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleClose)
+    return () => window.removeEventListener("scroll", handleClose)
   }, [handleClose])
 
   return (

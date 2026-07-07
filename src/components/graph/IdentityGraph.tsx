@@ -226,7 +226,7 @@ function getIconSvgString(iconName: string, size = 20): string {
     <IconComponent
       width={size}
       height={size}
-      stroke="#1D9E75"
+      stroke="#0a0a0a"
       strokeWidth={1.5}
       fill="none"
     />
@@ -327,7 +327,7 @@ const IdentityGraph = forwardRef<SVGSVGElement, IdentityGraphProps>(function Ide
         svg.append("path")
           .attr("d", pathD)
           .attr("fill", "none")
-          .attr("stroke", "#1D9E75")
+          .attr("stroke", "#00D4FF")
           .attr("stroke-width", 0.6)
           .attr("opacity", 0.18)
           .attr("class", `edge edge-${safeClass} edge-${safeClass}-${i}`)
@@ -339,7 +339,7 @@ const IdentityGraph = forwardRef<SVGSVGElement, IdentityGraphProps>(function Ide
       svg.append("path")
         .attr("d", `M ${identity.x} ${identity.y} Q ${mx} ${my} ${target.x} ${target.y}`)
         .attr("fill", "none")
-        .attr("stroke", "#1D9E75")
+        .attr("stroke", "#00D4FF")
         .attr("stroke-width", 1)
         .attr("opacity", 0.15)
         .attr("class", `edge edge-${safeClass} edge-${safeClass}-spine`)
@@ -379,7 +379,7 @@ const IdentityGraph = forwardRef<SVGSVGElement, IdentityGraphProps>(function Ide
           fo.append("xhtml:div")
             .style("color", "white")
             .style("display", "flex")
-            .html(iconStr.replace(/stroke="#1D9E75"/, 'stroke="white"'))
+            .html(iconStr.replace(/stroke="#0a0a0a"/, 'stroke="white"'))
         }
 
         g.append("text")
